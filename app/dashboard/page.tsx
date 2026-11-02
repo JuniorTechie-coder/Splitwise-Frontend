@@ -20,13 +20,9 @@ export default function DashboardPage() {
          
         async function fetchUser() {
             try {
-                const response = await fetch(
-                    "http://localhost:5000/api/auth/me",
-                    {
+                const response = await fetch("/api/auth/me", {
                         method: "GET",
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                        },
+                        credentials: "include",
                     }
                 );
 
@@ -56,9 +52,16 @@ export default function DashboardPage() {
         fetchUser();
     }, [router]);
 
-    function handleLogout(){
-            sessionStorage.removeItem("accessToken");
-            router.replace("/login");
+   async function handleLogout(){
+            const response = await fetch("/api/auth/logout", {
+                method: "POST",
+                credentials: "include",
+            });
+            if(response.ok){
+                  router.replace("/login");
+                  router.refresh();
+            }
+          
         }
 
 
