@@ -7,27 +7,18 @@ export default function DashboardPage() {
     const router = useRouter();
     const [userId, setUserId] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [error, setError] = useState("");
 
     useEffect(() => {
-        const accessToken = sessionStorage.getItem("accessToken");
-
-        if (!accessToken) {
-            router.replace("/login");
-            return;
-        }
-
-         
         async function fetchUser() {
             try {
                 const response = await fetch("/api/auth/me", {
-                        method: "GET",
-                        credentials: "include",
-                    }
-                );
+                    method: "GET",
+                    credentials: "include",
+                });
 
                 if (response.status === 401) {
-                    sessionStorage.removeItem("accessToken");
                     router.replace("/login");
                     return;
                 }
@@ -48,22 +39,33 @@ export default function DashboardPage() {
             }
         }
 
-
         fetchUser();
     }, [router]);
 
-   async function handleLogout(){
+    async function handleLogout() {
+        setIsLoggingOut(true);
+        setError("");
+
+        try {
             const response = await fetch("/api/auth/logout", {
                 method: "POST",
                 credentials: "include",
             });
-            if(response.ok){
-                  router.replace("/login");
-                  router.refresh();
-            }
-          
-        }
 
+            if (response.ok) {
+                router.replace("/login");
+                router.refresh();
+                return;
+            }
+
+            setError("Unable to log out. Please try again.");
+        } catch (requestError) {
+            console.error("Logout request failed:", requestError);
+            setError("Unable to connect to the server. Please try again.");
+        } finally {
+            setIsLoggingOut(false);
+        }
+    }
 
     return (
         <main className="min-h-screen bg-gray-950 p-8 text-white">
@@ -82,10 +84,11 @@ export default function DashboardPage() {
             )}
 
             <button
-            onClick={handleLogout}
-                className="mt-6 rounded-lg bg-gray-600 px-4 py-2 text-gray-300"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="mt-6 rounded-lg bg-gray-600 px-4 py-2 text-gray-300 disabled:cursor-not-allowed disabled:opacity-60"
             >
-                Logout
+                {isLoggingOut ? "Logging out..." : "Logout"}
             </button>
         </main>
     );
